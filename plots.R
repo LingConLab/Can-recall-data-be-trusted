@@ -124,7 +124,9 @@ russian_p <- ggplot()+
   labs(y='Indirect - Direct')+
   ggtitle('Russian (log odds)')+
   # scale_x_discrete(breaks=1922:1980, limits=1922:1980)
-  scale_x_discrete(breaks=1922:1980, limits=c(1922, v1[(!v1%%10)]))
+  scale_x_discrete(breaks=1922:1980, limits=c(1922, v1[(!v1%%10)]))+
+  ylim(-2, 2)+
+  geom_hline(yintercept = 0, size=1, linetype='dashed', color='blue' )
 
 ITM_p <- ggplot()+
   geom_ribbon(data=delta_itm_ci, aes(x=X, ymin=low, ymax=high), alpha=0.2)+
@@ -141,7 +143,9 @@ ITM_p <- ggplot()+
   labs(y='Indirect - Direct')+
   ggtitle('ITM')+
   # scale_x_discrete(breaks=1922:1980, limits=1922:1980)
-  scale_x_discrete(breaks=1922:1980, limits=c(1922, v1[(!v1%%10)]))
+  scale_x_discrete(breaks=1922:1980, limits=c(1922, v1[(!v1%%10)]))+
+  ylim(-0.7, 0.7)+
+  geom_hline(yintercept = 0, size=1, linetype='dashed', color='blue' )
 
 hist <- ggplot(russ, aes(x=year_of_birth, fill=type))+
   geom_histogram(position="dodge", bins = length(1922:1980))+
@@ -156,7 +160,7 @@ hist <- ggplot(russ, aes(x=year_of_birth, fill=type))+
         legend.background = element_rect(fill=alpha('transparent', 0)))
 
 arr <- ggarrange(ITM_p, russian_p, hist, nrow=3, common.legend = FALSE, align = "v")
-ggsave('plots/fig5.jpg', width = 10, height = 7, arr)
+ggsave('plots/arrange_delta.jpg', width = 10, height = 7, arr)
 
 
 
