@@ -1,3 +1,4 @@
+
 # Loading packages
 library(ggplot2)
 library(dplyr)
@@ -13,12 +14,8 @@ library(gganimate)
 library(ggpubr)
 library(grid)
 library(fitdistrplus)
-library(rstudioapi)
 
 v1 <- 1922:1980
-
-current_path <- getActiveDocumentContext()$path 
-setwd(dirname(current_path))
 
 # Fig. 4 ------------------------------------------------------------
 
@@ -78,7 +75,7 @@ ggsave('plots/fig4.jpg', width = 10, height = 7, arr)
 
 # Fig. 5 ------------------------------------------------------------------
 
-russ <- read.csv('data/russian.csv')
+russ <- read.csv('russian.csv')
 bins <- length(unique(russ$year_of_birth))
 russ[russ$type == 1,]$type = 'Direct'
 russ[russ$type == 0,]$type = 'Indirect'
@@ -169,9 +166,18 @@ data$born = 0
 data[data$year_of_birth <= 1922,]$born = 'Before 1922'
 data[data$year_of_birth >= 1922,]$born = 'After 1922'
 levels(data$sex) <- c('Female', 'Male')
-val <- max(data$year_of_birth)-min(data$year_of_birth)
 
-data_t <- read.csv('data/all.csv')
+new <- dplyr::select(data, residence, number.of.lang.strat, born, village.population)
+new <- group_by(new, residence, born, village.population)
+new_c <- new %>% summarise(mean=mean(number.of.lang.strat), count=n())
+new_c$mean_count <- 0
+new_c[new_c$born == 'After 1922',]$mean_count <- mean(new_c[new_c$born == 'After 1922',]$count)
+new_c[new_c$born == 'Before 1922',]$mean_count <- mean(new_c[new_c$born == 'Before 1922',]$count)
+new_c$mean_itm <- 0
+new_c[new_c$born == 'After 1922',]$mean_itm <- mean(new_c[new_c$born == 'After 1922',]$mean)
+new_c[new_c$born == 'Before 1922',]$mean_itm <- mean(new_c[new_c$born == 'Before 1922',]$mean)
+
+data_t <- read.csv('all.csv')
 new <- dplyr::select(data_t, residence, type, village.population)
 new <- group_by(new, residence, village.population)
 new_type <- new %>% summarise(mean=mean(type), count=n())
@@ -212,16 +218,6 @@ ggsave('plots/fig3.jpg', width = 8, height = 4)
 
 
 # Fig. 2 ------------------------------------------------------------------
-
-new <- dplyr::select(data, residence, number.of.lang.strat, born, village.population)
-new <- group_by(new, residence, born, village.population)
-new_c <- new %>% summarise(mean=mean(number.of.lang.strat), count=n())
-new_c$mean_count <- 0
-new_c[new_c$born == 'After 1922',]$mean_count <- mean(new_c[new_c$born == 'After 1922',]$count)
-new_c[new_c$born == 'Before 1922',]$mean_count <- mean(new_c[new_c$born == 'Before 1922',]$count)
-new_c$mean_itm <- 0
-new_c[new_c$born == 'After 1922',]$mean_itm <- mean(new_c[new_c$born == 'After 1922',]$mean)
-new_c[new_c$born == 'Before 1922',]$mean_itm <- mean(new_c[new_c$born == 'Before 1922',]$mean)
 
 new_c$born_т = factor(new_c$born, levels=c('Before 1922','After 1922'))
 
