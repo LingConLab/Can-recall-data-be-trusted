@@ -73,41 +73,10 @@ ITM <- ggplot()+
   guides(linetype = guide_legend(keywidth = 1.5, keyheight = 1))
 
 arr <- ggarrange(ITM, russian, nrow=2, common.legend = TRUE, legend="bottom", label.x=TRUE)
-ggsave('plots/fig4.jpg', width = 10, height = 7, arr)
+ggsave('plots/fig4.pdf', width = 10, height = 7, arr, dpi=320)
 
 
 # Fig. 5 ------------------------------------------------------------------
-
-russ <- read.csv('data/russian.csv')
-bins <- length(unique(russ$year_of_birth))
-russ[russ$type == 1,]$type = 'Direct'
-russ[russ$type == 0,]$type = 'Indirect'
-
-delta_russian <- read.csv('data_plots/delta_russian.csv')
-delta_russian_ci <- read.csv('data_plots/delta_russian_conf.csv')
-delta_russian_perm <- read.csv('data_plots/delta_russian_perm_gbr.csv')
-
-delta_russian$X <- unique(russ$year_of_birth)
-delta_russian_ci$X <- unique(russ$year_of_birth)
-
-delta_1 <- delta_russian_perm[delta_russian_perm$iter == 1,] %>% group_by(year_of_birth)
-delta_7 <- delta_russian_perm[delta_russian_perm$iter == 7,] %>% group_by(year_of_birth)
-delta_12 <- delta_russian_perm[delta_russian_perm$iter == 12,] %>% group_by(year_of_birth)
-delta_1000 <- delta_russian_perm[delta_russian_perm$iter == 1000,] %>% group_by(year_of_birth)
-delta_66 <- delta_russian_perm[delta_russian_perm$iter == 66,] %>% group_by(year_of_birth)
-
-delta_itm <- read.csv('data_plots/delta_itm.csv')
-delta_itm_ci <- read.csv('data_plots/delta_itm_conf.csv')
-delta_itm_perm <- read.csv('data_plots/delta_itm_perm_gbr.csv')
-
-delta_itm$X <- unique(russ$year_of_birth)
-delta_itm_ci$X <- unique(russ$year_of_birth)
-
-delta_2 <- delta_itm_perm[delta_itm_perm$iter == 2,] %>% group_by(year_of_birth)
-delta_8 <- delta_itm_perm[delta_itm_perm$iter == 8,] %>% group_by(year_of_birth)
-delta_17 <- delta_itm_perm[delta_itm_perm$iter == 17,] %>% group_by(year_of_birth)
-delta_1001 <- delta_itm_perm[delta_itm_perm$iter == 1001,] %>% group_by(year_of_birth)
-delta_68 <- delta_itm_perm[delta_itm_perm$iter == 68,] %>% group_by(year_of_birth)
 
 russian_p <- ggplot()+
   geom_ribbon(data=delta_russian_ci, aes(x=X, ymin=low, ymax=high), alpha=0.2)+
@@ -160,13 +129,13 @@ hist <- ggplot(russ, aes(x=year_of_birth, fill=type))+
         legend.background = element_rect(fill=alpha('transparent', 0)))
 
 arr <- ggarrange(ITM_p, russian_p, hist, nrow=3, common.legend = FALSE, align = "v")
-ggsave('plots/arrange_delta.jpg', width = 10, height = 7, arr)
+ggsave('plots/fig5.pdf', width = 10, height = 7, arr, dpi=320)
 
 
 
 # Fig. 1 ------------------------------------------------------------------
 
-data <- read.csv('all.csv')
+data <- read.csv('data/all.csv')
 data[data$type == 1,]$type = 'Direct'
 data[data$type == 0,]$type = 'Indirect'
 data$born = 0
@@ -192,7 +161,7 @@ ggplot(new_type, aes(x=count, y=mean))+
   geom_hline(color='red', yintercept = mean(new_type$mean), linetype='dashed')+
   geom_vline(color='red', xintercept = mean(new_type$count), linetype='dashed')
 
-ggsave('plots/fig1.jpg', width = 8, height = 4)
+ggsave('plots/fig1.pdf', width = 8, height = 4, dpi=320)
 
 
 
@@ -211,7 +180,7 @@ ggplot(data, aes(x=year_of_birth, fill=type))+
         legend.box.just = c("top"), 
         legend.background = element_rect(fill=alpha('transparent', 0)))
 
-ggsave('plots/fig3.jpg', width = 8, height = 4)
+ggsave('plots/fig3.pdf', width = 8, height = 4, dpi=320)
 
 
 
@@ -249,4 +218,4 @@ ggplot(new_c, aes(x=count, y=mean))+
   theme(legend.key = element_blank(), 
         strip.background = element_rect(colour="transparent", fill="transparent") ) 
 
-ggsave('plots/fig2.jpg', width = 14, height = 7)
+ggsave('plots/fig2.pdf', width = 14, height = 7, dpi=320)
