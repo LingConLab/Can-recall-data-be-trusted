@@ -33,3 +33,5 @@ All the packages needed to reproduce our work are presented in
 To guarantee reproducibility you have to install the particular versions of these
 packages (`pip install -r requirements.txt`). To avoid conflict we recommend using
 [virtualenv](https://virtualenv.pypa.io/en/latest/) or other Python environment managers.
+
+Note that currently submitted paper contains numerically different results due to usage of slighly different hyperparameters. All the qualitative conclusions are the same, and we will update the paper to match current reproducible results in the final version.
