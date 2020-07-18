@@ -99,8 +99,8 @@ delta_russian_ci <- read.csv('data/delta_russian_conf.csv')
 delta_russian_perm <- read.csv('delta_russian_perm_gbr_splitted.csv')
 delta_russian$X <- unique(russ$year_of_birth)
 delta_russian_ci$X <- unique(russ$year_of_birth)
-delta_itm <- read.csv('data/delta_itm.csv')
-delta_itm_ci <- read.csv('data/delta_itm_conf.csv')
+delta_itm <- read.csv('data/delta_ITM.csv')
+delta_itm_ci <- read.csv('data/delta_ITM_conf.csv')
 delta_itm_perm <- read.csv('delta_itm_perm_gbr_splitted.csv')
 delta_itm$X <- unique(russ$year_of_birth)
 delta_itm_ci$X <- unique(russ$year_of_birth)
@@ -113,7 +113,7 @@ russian_p <- ggplot()+
   labs(x='Year of birth')+
   ggtitle('Russian (log odds)')+
   scale_x_discrete(breaks=1922:1980, limits=c(1922, v1[(!v1%%10)]))+
-  ylim(-3, 3)+
+  ylim(-2.5, 2.5)+
   geom_hline(yintercept = 0, size=0.5, linetype='dashed', color='blue' )
 
 ITM_p <- ggplot()+
