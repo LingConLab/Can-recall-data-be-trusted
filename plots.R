@@ -97,13 +97,16 @@ russ[russ$type == 0,]$type = 'Indirect'
 delta_russian <- read.csv('data/delta_russian.csv')
 delta_russian_ci <- read.csv('data/delta_russian_conf.csv')
 delta_russian_perm <- read.csv('delta_russian_perm_gbr_splitted.csv')
-delta_russian$X <- unique(russ$year_of_birth)
-delta_russian_ci$X <- unique(russ$year_of_birth)
+delta_russian$X <- sort(unique(russ$year_of_birth))
+delta_russian_ci$X <- sort(unique(russ$year_of_birth))
 delta_itm <- read.csv('data/delta_ITM.csv')
 delta_itm_ci <- read.csv('data/delta_ITM_conf.csv')
 delta_itm_perm <- read.csv('delta_itm_perm_gbr_splitted.csv')
-delta_itm$X <- unique(russ$year_of_birth)
-delta_itm_ci$X <- unique(russ$year_of_birth)
+delta_itm$X <- sort(unique(russ$year_of_birth))
+delta_itm_ci$X <- sort(unique(russ$year_of_birth))
+
+length(delta_russian$X)
+
 
 russian_p <- ggplot()+
   geom_ribbon(data=delta_russian_ci, aes(x=X, ymin=low, ymax=high), alpha=0.2)+
@@ -123,7 +126,7 @@ ITM_p <- ggplot()+
   labs(y='Indirect - Direct', x='Year of birth')+
   ggtitle('ITM')+
   scale_x_discrete(breaks=1922:1980, limits=c(1922, v1[(!v1%%10)]))+
-  ylim(-0.7, 0.7)+
+  ylim(-0.6, 0.6)+
   geom_hline(yintercept = 0, size=0.5, linetype='dashed', color='blue' )
 
 arr <- ggarrange(ITM_p, russian_p, ncol=2, common.legend = FALSE, align = "h")
