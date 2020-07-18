@@ -168,7 +168,7 @@ def get_delta(data, use_logodds=False):
 def identity(x):
     return x
 
-residence_info = pd.read_csv("residence_info.csv")
+residence_info = pd.read_csv("data/residence_info.csv")
 
 def read_data(filename):
     return (pd.read_csv(filename)
