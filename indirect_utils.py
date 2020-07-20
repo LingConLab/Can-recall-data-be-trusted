@@ -178,3 +178,32 @@ def read_data(filename):
 
 russian_to_target = {True: 'russian',
                      False: 'number of lang'}
+
+def ci(series, beta=0.95):
+    """
+    Finds an interval that takes proprotion of beta of the distribution in series
+    """
+    alpha = 1 - beta
+    return (series.quantile(alpha / 2), series.quantile(1 - alpha / 2))
+
+def confint_df(delta_df, beta=0.95):
+    """
+    This function is used to construct confidence band for null distribution
+    For each year_of_birth it finds corresponding confidence interval
+    Adds columns low, mean and high.
+    """
+    return (
+        (
+            delta_df.groupby("year_of_birth").agg(
+                dict(
+                    delta=(
+                        ("low", lambda x: x.quantile((1 - beta) / 2)),
+                        "mean",
+                        ("high", lambda x: x.quantile(1 - (1 - beta) / 2)),
+                    )
+                )
+            )
+        )
+        .droplevel(axis=1, level=0)
+        .reset_index()
+    )
