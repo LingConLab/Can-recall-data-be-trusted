@@ -187,7 +187,7 @@ st.write(
         filter_df(pred_full, selection),
         "русский" if target == "Russian" else "number of lang",
         ylabel=target,
-        ylim=(0.3, 1.1) if target == "Russian" else (0, 2.1),
+        ylim=(0, 1.1) if target == "Russian" else (0, 2.1),
         showlegend=showlegend,
     )
 )
