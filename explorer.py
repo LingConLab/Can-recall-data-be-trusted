@@ -26,7 +26,10 @@ def read_everything(target, postfix):
     return (data, delta_perm, delta_bootstrap, pred_full, delta_full)
 
 
-st.title("Predictions explorer")
+st.title("Data and model explorer")
+st.markdown("Interactive supplement for paper "
+            "[Can recall data be trusted]"
+            "(https://github.com/LingConLab/Can-recall-data-be-trusted).")
 
 features_cat = ["sex", "mother tongue"]
 features_real = ["village population", "elevation"]
