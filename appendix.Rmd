@@ -1,0 +1,245 @@
+---
+title: "Online supplement for the paper 'Can recall data be trusted?'"
+# knit: (function(input_file, encoding) {
+#   out_dir <- 'docs';
+#   rmarkdown::render(input_file,
+#  encoding=encoding,
+#  output_file=file.path(dirname(input_file), out_dir, 'index.html'))})
+author: "Michael Daniel, Alexey Koshevoy, Ilya Shurov, and Nina Dobrushina"
+runtime: shiny_prerendered
+output:
+  html_document:
+  theme: cosmo
+---
+
+# Appendix {.tabset .tabset-fade .tabset-pills}
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(rstudioapi)
+library(dplyr)
+library(sjPlot)
+library(grid)
+library(rstudioapi) 
+library(shiny)
+library(ggrepel)
+# current_path <- getActiveDocumentContext()$path 
+# setwd(dirname(current_path))
+```
+
+
+## Model predictions
+
+```{r, echo=FALSE, warning=FALSE, include=FALSE}
+v1 <- 1922:1980
+russian_group <- read.csv('data/scatter_русский.csv')
+russian_pred <- read.csv('data/line_русский.csv')
+russian_group$collected.datab <- 0
+russian_group[russian_group$collected.data == 'direct',]$collected.datab <- 'Direct'
+russian_group[russian_group$collected.data == 'indirect',]$collected.datab <- 'Indirect'
+russian_pred$model.predictionb <- 0
+russian_pred[russian_pred$model.prediction == 'indirect',]$model.predictionb <- 'Indirect'
+russian_pred[russian_pred$model.prediction == 'direct',]$model.predictionb <- 'Direct'
+
+ITM_group <- read.csv('data/scatter_number of lang.csv')
+ITM_pred <- read.csv('data/line_number of lang.csv')
+ITM_group$collected.datab <- 0
+ITM_group[ITM_group$collected.data == 'direct',]$collected.datab <- 'Direct'
+ITM_group[ITM_group$collected.data == 'indirect',]$collected.datab <- 'Indirect'
+ITM_pred$model.predictionb <- 0
+ITM_pred[ITM_pred$model.prediction == 'indirect',]$model.predictionb <- 'Indirect'
+ITM_pred[ITM_pred$model.prediction == 'direct',]$model.predictionb <- 'Direct'
+
+russian_pred_group <- dplyr::select(russian_pred, year_of_birth, model.predictionb, pred) %>% 
+  group_by(year_of_birth, model.predictionb) %>% 
+  summarise(pred = mean(pred))
+ITM_pred_group <- dplyr::select(ITM_pred, year_of_birth, model.predictionb, pred) %>% 
+  group_by(year_of_birth, model.predictionb) %>% 
+  summarise(pred = mean(pred))
+```
+
+
+```{r eruptions2, echo=FALSE}
+inputPanel(selectInput("target2", label = "Target variable:", 
+                       choices = c('ITM', 'Russian'), selected = 'Russian'))
+
+inputPanel(sliderInput('year_ob', label='Year of birth', min=1922, max=1980, sep='', value=c(1922, 1980), step=1))
+
+renderPlot({
+  min <- input$year_ob[1]
+  max <- input$year_ob[2]
+  if (input$target2 == 'Russian'){
+      ggplot()+
+        geom_point(data=russian_group[russian_group$year_of_birth > min,], aes(x=year_of_birth, y=mean, size=count, color=collected.datab))+
+        geom_line(data=russian_pred_group[russian_pred_group$year_of_birth > min,], aes(x=year_of_birth, y=pred, linetype=model.predictionb), size=1, color='red')+
+        theme_bw()+
+        scale_color_manual(values=c("#f78e30", "#4581a9"))+
+        labs(y = "P(Russian)", size=' Number\n of observations', x='Year of birth', color='Collected data', linetype='Predicted data')+
+        scale_size_continuous(range = c(2, 6))+
+        guides(color = guide_legend(override.aes = list(size=5)))+
+        guides(linetype = guide_legend(keywidth = 1.5, keyheight = 1))
+  } else {
+    ggplot()+
+      geom_point(data=ITM_group[ITM_group$year_of_birth > min,], aes(x=year_of_birth, y=mean, size=count, color=collected.datab))+
+      geom_line(data=ITM_pred_group[ITM_pred_group$year_of_birth > min,], aes(x=year_of_birth, y=pred, linetype=model.predictionb), size=1, color='red')+
+      theme_bw()+
+      scale_color_manual(values=c("#f78e30", "#4581a9"))+
+      labs(y = "ITM", size=' Number\n of observations', x='Year of birth', color=' Collected data', linetype=' Predicted data')+
+      scale_size_continuous(range = c(2, 6))+
+      guides(color = guide_legend(override.aes = list(size=5)))+
+      guides(linetype = guide_legend(keywidth = 1.5, keyheight = 1))
+  }
+})
+```
+
+
+## Delta 
+
+
+```{r, include=FALSE}
+russ <- read.csv('data/russian.csv')
+bins <- length(unique(russ$year_of_birth))
+russ[russ$type == 1,]$type = 'Direct'
+russ[russ$type == 0,]$type = 'Indirect'
+delta_russian <- read.csv('data/delta_russian.csv')
+delta_russian_ci <- read.csv('data/delta_russian_conf.csv')
+delta_russian_perm <- read.csv('delta_russian_perm_gbr_splitted.csv')
+delta_russian$X <- sort(unique(russ$year_of_birth))
+delta_russian_ci$X <- sort(unique(russ$year_of_birth))
+delta_itm <- read.csv('data/delta_ITM.csv')
+delta_itm_ci <- read.csv('data/delta_ITM_conf.csv')
+delta_itm_perm <- read.csv('delta_itm_perm_gbr_splitted.csv')
+delta_itm$X <- sort(unique(russ$year_of_birth))
+delta_itm_ci$X <- sort(unique(russ$year_of_birth))
+```
+
+```{r eruptions, echo=FALSE}
+inputPanel(selectInput("target", label = "Target variable:", 
+                       choices = c('ITM', 'Russian'), selected = 'Russian'))
+
+renderPlot({
+  if (input$target == 'Russian'){
+      ggplot()+
+        geom_ribbon(data=delta_russian_ci, aes(x=X, ymin=low, ymax=high), alpha=0.2)+
+        geom_line(data=delta_russian, aes(x=X, y=delta, color='Russian, log-odds'), color='red', size = 1)+
+        theme_bw()+
+        labs(y='Indirect - Direct', x='Year of birth')+
+        ggtitle('Russian (log odds)')+
+        scale_x_discrete(breaks=1922:1980, limits=c(1922, v1[(!v1%%10)]))+
+        ylim(-2.5, 2.5)+
+        geom_hline(yintercept = 0, size=0.5, linetype='dashed', color='blue' )
+  } else {
+    ggplot()+
+      geom_ribbon(data=delta_itm_ci, aes(x=X, ymin=low, ymax=high), alpha=0.2)+
+      geom_line(data=delta_itm, aes(x=X, y=delta), color='red', size = 1)+
+      theme_bw()+
+      labs(y='Indirect - Direct', x='Year of birth')+
+      ggtitle('ITM')+
+      scale_x_discrete(breaks=1922:1980, limits=c(1922, v1[(!v1%%10)]))+
+      ylim(-0.6, 0.6)+
+      geom_hline(yintercept = 0, size=0.5, linetype='dashed', color='blue' )
+  }
+})
+```
+
+## ITM descriptive statistics
+
+### Average ITM in different villages
+
+
+```{r, echo=FALSE, include=FALSE}
+data <- read.csv('data/all.csv')
+data[data$type == 1,]$type <-  'Direct'
+data[data$type == 0,]$type <-  'Indirect'
+data$born <-  0
+data[data$year_of_birth <= 1922,]$born <-  'Before 1922'
+data[data$year_of_birth >= 1922,]$born <-  'After 1922'
+levels(data$sex) <- c('Female', 'Male')
+new <- dplyr::select(data, residence, number.of.lang.strat, born, village.population)
+new <- group_by(new, residence, born, village.population)
+new_c <- new %>% summarise(mean=mean(number.of.lang.strat), count=n())
+new_c$mean_count <- 0
+new_c[new_c$born == 'After 1922',]$mean_count <- mean(new_c[new_c$born == 'After 1922',]$count)
+new_c[new_c$born == 'Before 1922',]$mean_count <- mean(new_c[new_c$born == 'Before 1922',]$count)
+new_c$mean_itm <- 0
+new_c[new_c$born == 'After 1922',]$mean_itm <- mean(new_c[new_c$born == 'After 1922',]$mean)
+new_c[new_c$born == 'Before 1922',]$mean_itm <- mean(new_c[new_c$born == 'Before 1922',]$mean)
+new_c$born_t <- 0
+new_c$born_t <-  factor(new_c$born, levels=c('Before 1922','After 1922'))
+```
+
+```{r eruptions0, echo=FALSE}
+
+inputPanel(selectInput("born", label = "Born :", 
+                       choices = c('Before 1922', 'After 1922'), selected = 'After 1922'))
+
+renderPlot({
+  if (input$born == 'After 1922'){
+    ggplot(new_c[new_c$born_t %in% 'After 1922',], aes(x=count, y=mean))+
+      geom_point()+
+      labs(y = "Average ITM", x='Number of observations', size=' Village\n population')+
+      geom_text_repel(aes(label=residence),hjust=0, vjust=0)+
+      theme_bw()+
+      theme(legend.position=c(1,1),legend.justification=c(1,1),
+            legend.direction="vertical",
+            legend.box="horizontal",
+            legend.box.just = c("top"), 
+            legend.background = element_rect(fill=alpha('transparent', 0)))+
+      geom_vline(aes(xintercept = mean_count), linetype = "dashed",
+                   colour = "red")+
+      geom_hline(aes(yintercept = mean_itm), linetype = "dashed",
+                   colour = "red")+
+      theme(strip.text=element_text(size=16),
+            axis.title=element_text(size=16))+
+      theme(legend.key = element_blank(), 
+            strip.background = element_rect(colour="transparent", fill="transparent"))
+  } else {
+        ggplot(new_c[new_c$born %in% 'Before 1922',], aes(x=count, y=mean))+
+      geom_point()+
+      labs(y = "Average ITM", x='Number of observations', size=' Village\n population')+
+      geom_text_repel(aes(label=residence),hjust=0, vjust=0)+
+      theme_bw()+
+      theme(legend.position=c(1,1),legend.justification=c(1,1),
+            legend.direction="vertical",
+            legend.box="horizontal",
+            legend.box.just = c("top"), 
+            legend.background = element_rect(fill=alpha('transparent', 0)))+
+      geom_vline(aes(xintercept = mean_count), linetype = "dashed",
+                   colour = "red")+
+      geom_hline(aes(yintercept = mean_itm), linetype = "dashed",
+                   colour = "red")+
+      theme(strip.text=element_text(size=16),
+            axis.title=element_text(size=16))+
+      theme(legend.key = element_blank(), 
+            strip.background = element_rect(colour="transparent", fill="transparent"))
+  }
+  
+})
+```
+
+
+Average ITM is shown for two age groups, people born before (exclusive) and after (inclusive) 1922, in (a) and (b), respectively. Comparing specific locations before and after 1922\footnote{Year 1922 is the first year for which we have two datapoints obtained directly, from the people born in this year. It is chosen as a cutoff point with a view to further analysis (see section The model)}, as well as the total average (the horizontal dotted red line), shows a decrease in the average ITM values. This reflects the loss of traditional multilingualism in the course of the last century, as it was being ousted by the use of Russian as lingua franca \citep{dobrushina2019gendered}. In the more traditional configuration, on the left panel, one can see that an ‘average Daghestanian villager’ was likely to know at least one language as L2 (not to count Russian). Hinuq, the village speaking Hinuq, a one-village language of the Tsezic branch, shows one of the highest values of ITM in both charts. Average number of L2 for a resident of Hinuq is 3.5 for people in the first group, and about 2.7 in the second age group. On the other end of the scale, villages of Darvag (Azerbaijani), Dorgeli (Kumyk) and Durangi (Avar) show no traditional multilingualism at all. 
+
+
+### Percentage of direct data and the total number of observations across villages
+
+```{r, echo=FALSE, include=FALSE}
+data_t <- read.csv('data/all.csv')
+new <- dplyr::select(data_t, residence, type, village.population)
+new <- group_by(new, residence, village.population)
+new_type <- new %>% summarise(mean=mean(type), count=n())
+ggplot(new_type, aes(x=count, y=mean))+
+  geom_point()+
+  # geom_point()+
+  labs(y = "Percentage of direct data", x='Number of observations', size=' Village\n population', color='Born')+
+  # facet_grid(cols=vars(born))+
+  geom_text_repel(aes(label=residence))+
+  theme_bw()+
+  scale_y_continuous(labels = scales::percent)+
+  geom_hline(color='red', yintercept = mean(new_type$mean), linetype='dashed')+
+  geom_vline(color='red', xintercept = mean(new_type$count), linetype='dashed')
+```
+
+
+Dots are villages. Axis Y indicates the amount of the direct data obtained for the village as a percentage to all data points obtained for this village. Axis X indicates the total number of datapoints obtained for the village. The dotted lines show the average values. As \autoref{fig:village-obs-direct} shows, the amount of data per village is usually between 50 and 150, and the percentage of direct data usually lies between 20 and 40. Next, \autoref{fig:amount} is the density plot showing the distribution of direct and indirect data over the years of birth. 
