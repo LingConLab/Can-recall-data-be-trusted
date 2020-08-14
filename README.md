@@ -34,8 +34,8 @@ Some auxiliary functions that are used by different ipynb files are moved to
 [indirect-utils.py](https://github.com/LingConLab/Can-recall-data-be-trusted/blob/master/indirect_utils.py).
 
 All the packages needed to reproduce our work are presented in
-[requirements.txt](https://github.com/LingConLab/Can-recall-data-be-trusted/blob/master/requirements.txt). 
-[parser/parser.py](https://github.com/LingConLab/Can-recall-data-be-trusted/blob/master/parser/parser.py) is used to download the latest version of [Multidagestan](https://multidagestan.com/) and store it for further use by [preprocessing.py](https://github.com/LingConLab/Can-recall-data-be-trusted/blob/master/preprocessing.py).
-To guarantee reproducibility you have to install the particular versions of these
+[requirements.txt](https://github.com/LingConLab/Can-recall-data-be-trusted/blob/master/requirements.txt). To guarantee reproducibility you have to install the particular versions of these
 packages (`pip install -r requirements.txt`). To avoid conflict we recommend using
 [virtualenv](https://virtualenv.pypa.io/en/latest/) or other Python environment managers.
+
+The online supplement with aditional plots could be found [here](https://lingconlab.github.io/Can-recall-data-be-trusted/).
