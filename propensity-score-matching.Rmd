@@ -60,7 +60,7 @@ We see that the difference in ITM between direct and indirect data is statistica
 ### Visualizations
 Here we construct plots that shows the dependence of ITM in direct and indirect data for initial dataset and balanced dataset (after the matching).
 
-```{r, warning=FALSE}
+```{r, warning=FALSE, message=FALSE}
 dta_m_ITM %>% 
   group_by(year_of_birth, type) %>%
   summarise_all(funs(mean)) %>%
@@ -92,14 +92,16 @@ dta_m_russian <- match.data(mod_match_russian)
 
 To estimate the difference, we will use bivariate logistic regression.
 ```{r}
-fit <- glm(русский ~ type, family=binomial(link='logit'), data=dta_m_russian)
+fit <- glm(русский ~ type, 
+                  family=binomial(link='logit'), 
+                  data=dta_m_russian)
 summary(fit)
 ```
 We see that `type` is significant and type == 1 (direct data) gives larger value of Russian than type == 0 (indirect data). This is in agreement with the result in the paper and the coefficient is close to the value 0.4 reported in the paper (the sign is opposite as we are denoting systematic bias as "indirect data minus direct data")
 
 ### Visualizations
 
-```{r, warning=FALSE}
+```{r, warning=FALSE, message=FALSE}
 russian %>% 
   group_by(year_of_birth, type) %>%
   summarise_all(funs(mean)) %>%
