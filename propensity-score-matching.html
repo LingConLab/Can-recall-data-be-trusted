@@ -1640,22 +1640,12 @@ summary {
 <div id="estimation-of-difference-between-direct-and-indirect-data" class="section level2">
 <h2>Estimation of difference between direct and indirect data</h2>
 <p>In this notebook, we present alternative analysis of our data, using technique, known as propensity score matching (Rosenbaum and Rubin 1983).</p>
-<p>To compare target variables (i.e. <code>ITM</code> and <code>Russian</code>) between direct and indirect data, we have to take into account that probability to be included in the indirect subsample depends on other variables (most notably, <code>year_of_birth</code>), that can also affect the target variables and thus produce bias (effect known as <em>confounding</em>). To adjust for this bias, in the main paper we compare predictions of machine learning models instead of comparing values of target variables.</p>
-<p>Propensity score matching is another approach to deal with this bias. This is two-step procedure. At the first step, for every item in our dataset we estimate probability to be included into indirect data based on other variables. At the second step, we <em>match</em> every item in the direct data with some element in the indirect data in such a way that both items, according to values of other variables, has the same probability to be included in the indirect data. This allows us to produce balanced dataset and then compare variables of interest directly.</p>
-<p>We will use <code>MatchIt</code> library (Ho, Imai, King and Stuart 2011) to make the actual matching. Due to non-linear nature of our data, we use random forest algorithm to estimate the probability at the first step instead of the logistic regression.</p>
-<pre class="r"><code>library(tidyverse)</code></pre>
-<pre><code>## ── Attaching packages ──────────────────────────────── tidyverse 1.3.0 ──</code></pre>
-<pre><code>## ✓ ggplot2 3.3.0     ✓ purrr   0.3.3
-## ✓ tibble  2.1.3     ✓ dplyr   1.0.2
-## ✓ tidyr   1.0.0     ✓ stringr 1.4.0
-## ✓ readr   1.3.1     ✓ forcats 0.4.0</code></pre>
-<pre><code>## Warning: package &#39;dplyr&#39; was built under R version 3.6.2</code></pre>
-<pre><code>## ── Conflicts ─────────────────────────────────── tidyverse_conflicts() ──
-## x dplyr::filter() masks stats::filter()
-## x dplyr::lag()    masks stats::lag()</code></pre>
-<pre class="r"><code>library(MatchIt)</code></pre>
-<pre><code>## Warning: package &#39;MatchIt&#39; was built under R version 3.6.2</code></pre>
-<pre class="r"><code>library(patchwork)
+<p>To compare target variables (i.e. <code>ITM</code> and <code>Russian</code>) between direct and indirect data, we have to take into account that chances to obtain observation in direct or indirect data depend on other variables of this observation (most notably, on <code>year_of_birth</code>). These variables can also affect the target variables (i.e. ITM decreases with time) and thus produce bias in our estimates (effect known as <em>confounding</em>). To adjust for this bias, in the main paper we compare predictions of machine learning models instead of comparing values of target variables directly. This is similar to adjustment procedure used in econometrics, where potential confounders are added into the regression models to “isolate” causal effect of the variable we are interested in (in our case, data type).</p>
+<p>Propensity score matching is another approach to deal with this problem. This is two-step procedure. At the first step, we construct a predictive model that estimates probability for an observation to be included in the indirect subsample, based on the values of other variables. At the second step, we <em>match</em> every item in the direct data with some element in the indirect data in such a way that both items, according to values of other variables and our model, has the same probability to be included in the indirect data. This allows us to produce balanced dataset and then compare variables of interest directly.</p>
+<p>We will use <code>MatchIt</code> library (Ho, Imai, King and Stuart 2011) to make the actual matching. Due to non-linear nature of our data, we use random forest algorithm to estimate the probability at the first step instead of the logistic regression (which is the default).</p>
+<pre class="r"><code>library(tidyverse)
+library(MatchIt)
+library(patchwork)
 
 ITM &lt;- read.csv(&quot;data/ITM.csv&quot;)
 russian &lt;- read.csv(&quot;data/russian.csv&quot;)</code></pre>
@@ -1677,8 +1667,9 @@ mod_match_ITM &lt;- matchit(type ~ year_of_birth
                          discard=&#39;both&#39;
                          )
 dta_m_ITM &lt;- match.data(mod_match_ITM)</code></pre>
-<p>Now we can compare the difference in ITM values between direct and indirect data. In fact, this difference is not equivalent to the systematic bias discussed in the paper. What we obtain here is so-called ATT, <em>average treatment effect on the treated</em>, i.e. it measures an average difference in ITM between direct and indirect data for informants who are “treated”, i.e. belong to indirect data subsample. This produce slighly different weighting compared with the method used in paper.</p>
-<p>Nevertheless, we can use this effect size as an estimate of difference between direct and indirect data. To test for statistical significance, we will use <code>t.test</code>.</p>
+<p>Now <code>dta_m_ITM</code> consists of matched samples. This is our approximation to the balanced dataset.</p>
+<p>Now we can compare the difference in ITM values between direct and indirect data. In fact, this difference is not equivalent to the systematic bias discussed in the paper. What we obtain here is so-called ATT, <em>average treatment effect on the treated</em>, i.e. it measures average difference in ITM between direct and indirect data for informants who are “treated”, i.e. belong to indirect data subsample. This produce slighly different weighting compared with the method used in paper, where all possible combinations of values of variables were used with equal weights to estimate the difference.</p>
+<p>Nevertheless, ATT is also a reasonable estimate of the difference between direct and indirect data, and should produce similar results. To test for statistical significance, we will use <code>t.test</code>.</p>
 <pre class="r"><code>t.test(number.of.lang ~ type, data = dta_m_ITM)</code></pre>
 <pre><code>## 
 ##  Welch Two Sample t-test

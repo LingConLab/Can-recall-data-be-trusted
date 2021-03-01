@@ -9,13 +9,13 @@ output:
 
 In this notebook, we present alternative analysis of our data, using technique, known as propensity score matching (Rosenbaum and Rubin 1983).
 
-To compare target variables (i.e. `ITM` and `Russian`) between direct and indirect data, we have to take into account that probability to be included in the indirect subsample depends on other variables (most notably, `year_of_birth`), that can also affect the target variables and thus produce bias (effect known as *confounding*). To adjust for this bias, in the main paper we compare predictions of machine learning models instead of comparing values of target variables.
+To compare target variables (i.e. `ITM` and `Russian`) between direct and indirect data, we have to take into account that chances to obtain observation in direct or indirect data depend on other variables of this observation (most notably, on `year_of_birth`). These variables can also affect the target variables (i.e. ITM decreases with time) and thus produce bias in our estimates (effect known as *confounding*). To adjust for this bias, in the main paper we compare predictions of machine learning models instead of comparing values of target variables directly. This is similar to adjustment procedure used in econometrics, where potential confounders are added into the regression models to "isolate" causal effect of the variable we are interested in (in our case, data type).
 
-Propensity score matching is another approach to deal with this bias. This is two-step procedure. At the first step, for every item in our dataset we estimate probability to be included into indirect data based on other variables. At the second step, we *match* every item in the direct data with some element in the indirect data in such a way that both items, according to values of other variables, has the same probability to be included in the indirect data. This allows us to produce balanced dataset and then compare variables of interest directly.
+Propensity score matching is another approach to deal with this problem. This is two-step procedure. At the first step, we construct a predictive model that estimates probability for an observation to be included in the indirect subsample, based on the values of other variables. At the second step, we *match* every item in the direct data with some element in the indirect data in such a way that both items, according to values of other variables and our model, has the same probability to be included in the indirect data. This allows us to produce balanced dataset and then compare variables of interest directly.
 
-We will use `MatchIt` library (Ho, Imai, King and Stuart 2011) to make the actual matching. Due to non-linear nature of our data, we use random forest algorithm to estimate the probability at the first step instead of the logistic regression. 
+We will use `MatchIt` library (Ho, Imai, King and Stuart 2011) to make the actual matching. Due to non-linear nature of our data, we use random forest algorithm to estimate the probability at the first step instead of the logistic regression (which is the default).
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(MatchIt)
 library(patchwork)
@@ -46,9 +46,11 @@ mod_match_ITM <- matchit(type ~ year_of_birth
 dta_m_ITM <- match.data(mod_match_ITM)
 ```
 
-Now we can compare the difference in ITM values between direct and indirect data. In fact, this difference is not equivalent to the systematic bias discussed in the paper. What we obtain here is so-called ATT, *average treatment effect on the treated*, i.e. it measures an average difference in ITM between direct and indirect data for informants who are "treated", i.e. belong to indirect data subsample. This produce slighly different weighting compared with the method used in paper.
+Now `dta_m_ITM` consists of matched samples. This is our approximation to the balanced dataset.
 
-Nevertheless, we can use this effect size as an estimate of difference between direct and indirect data. To test for statistical significance, we will use `t.test`.
+Now we can compare the difference in ITM values between direct and indirect data. In fact, this difference is not equivalent to the systematic bias discussed in the paper. What we obtain here is so-called ATT, *average treatment effect on the treated*, i.e. it measures average difference in ITM between direct and indirect data for informants who are "treated", i.e. belong to indirect data subsample. This produce slighly different weighting compared with the method used in paper, where all possible combinations of values of variables were used with equal weights to estimate the difference.
+
+Nevertheless, ATT is also a reasonable estimate of the difference between direct and indirect data, and should produce similar results. To test for statistical significance, we will use `t.test`.
 
 ```{r}
 t.test(number.of.lang ~ type, data = dta_m_ITM)

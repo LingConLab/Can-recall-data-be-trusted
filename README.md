@@ -26,9 +26,10 @@ The initial data are stored in folder [data](https://github.com/LingConLab/Can-r
 - [do-simulations.ipynb](https://github.com/LingConLab/Can-recall-data-be-trusted/blob/master/do-simulations.ipynb) contains calculations of *imputed true difference* and corresponding distributions.
 - [make-pics.ipynb](https://github.com/LingConLab/Can-recall-data-be-trusted/blob/master/make-pics.ipynb)
     contains the final results: pictures, confidence intervals and p-values.
-    
 - [plots.R](https://github.com/LingConLab/Can-recall-data-be-trusted/blob/master/plots.R) 
     draws the versions of the plots used in the paper.
+- [propensity-score-matching.Rmd](https://htmlpreview.github.io/?https://github.com/LingConLab/Can-recall-data-be-trusted/blob/master/propensity-score-matching.html)
+    uses different technique to test main conclusions of the paper.
 
 Some auxiliary functions that are used by different ipynb files are moved to
 [indirect-utils.py](https://github.com/LingConLab/Can-recall-data-be-trusted/blob/master/indirect_utils.py).
