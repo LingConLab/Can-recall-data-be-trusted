@@ -1,0 +1,116 @@
+---
+title: "Propensity score matching"
+output:
+  html_document:
+    df_print: paged
+---
+
+## Estimation of difference between direct and indirect data
+
+In this notebook, we present alternative analysis of our data, using technique, known as propensity score matching (Rosenbaum and Rubin 1983).
+
+To compare target variables (i.e. `ITM` and `Russian`) between direct and indirect data, we have to take into account that probability to be included in the indirect subsample depends on other variables (most notably, `year_of_birth`), that can also affect the target variables and thus produce bias (effect known as *confounding*). To adjust for this bias, in the main paper we compare predictions of machine learning models instead of comparing values of target variables.
+
+Propensity score matching is another approach to deal with this bias. This is two-step procedure. At the first step, for every item in our dataset we estimate probability to be included into indirect data based on other variables. At the second step, we *match* every item in the direct data with some element in the indirect data in such a way that both items, according to values of other variables, has the same probability to be included in the indirect data. This allows us to produce balanced dataset and then compare variables of interest directly.
+
+We will use `MatchIt` library (Ho, Imai, King and Stuart 2011) to make the actual matching. Due to non-linear nature of our data, we use random forest algorithm to estimate the probability at the first step instead of the logistic regression. 
+
+```{r}
+library(tidyverse)
+library(MatchIt)
+library(patchwork)
+
+ITM <- read.csv("data/ITM.csv")
+russian <- read.csv("data/russian.csv")
+```
+
+### ITM
+
+In propensity score matching,  the variable which effect we estimate (i.e. `type` variable in our case) is called *treatment variable* and corresponding groups are called "treatment group" (i.e. treatment variable equals to 1) and "control group" (i.e. treatment variable equals to 0). It is usually assumed that control group is at least as large as treatment group (or larger). Thus we denote *indirect data* as control group and *direct data* as treatment group.
+
+```{r}
+# type == 1 means direct data, type == 0 otherwise
+set.seed(1)
+mod_match_ITM <- matchit(type ~ year_of_birth 
+                         + language.population 
+                         + elevation 
+                         + village.population
+                         + mother.tongue
+                         + residence
+                         + sex,
+                         method = "nearest",
+                         distance = "randomforest",
+                         data=ITM,
+                         discard='both'
+                         )
+dta_m_ITM <- match.data(mod_match_ITM)
+```
+
+Now we can compare the difference in ITM values between direct and indirect data. In fact, this difference is not equivalent to the systematic bias discussed in the paper. What we obtain here is so-called ATT, *average treatment effect on the treated*, i.e. it measures an average difference in ITM between direct and indirect data for informants who are "treated", i.e. belong to indirect data subsample. This produce slighly different weighting compared with the method used in paper.
+
+Nevertheless, we can use this effect size as an estimate of difference between direct and indirect data. To test for statistical significance, we will use `t.test`.
+
+```{r}
+t.test(number.of.lang ~ type, data = dta_m_ITM)
+```
+We see that the difference in ITM between direct and indirect data is statistically insignificant, that is in agreement with the results of our paper.
+
+### Visualizations
+Here we construct plots that shows the dependence of ITM in direct and indirect data for initial dataset and balanced dataset (after the matching).
+
+```{r, warning=FALSE}
+dta_m_ITM %>% 
+  group_by(year_of_birth, type) %>%
+  summarise_all(funs(mean)) %>%
+  ggplot(aes(x=year_of_birth, y=number.of.lang, color=as.factor(type))) + 
+  geom_point() + geom_smooth(method='loess', span=0.5) + ggtitle("After matching")-> fig_m_ITM
+ITM %>% 
+  group_by(year_of_birth, type) %>%
+  summarise_all(funs(mean)) %>%
+  ggplot(aes(x=year_of_birth, y=number.of.lang, color=as.factor(type))) + 
+  geom_point() + geom_smooth(method='loess', span=0.5) + ggtitle("Initial data") -> fig_ITM
+fig_ITM / fig_m_ITM
+```
+
+### Russian
+Here we repeat the same steps with `Russian` variable.
+```{r}
+mod_match_russian <- matchit(type ~ year_of_birth 
+                         + language.population 
+                         + elevation 
+                         + village.population
+                         + mother.tongue
+                         + residence
+                         + sex,
+              method = "nearest", 
+              distance = "randomforest",
+              data = russian)
+dta_m_russian <- match.data(mod_match_russian)
+```
+
+To estimate the difference, we will use bivariate logistic regression.
+```{r}
+fit <- glm(русский ~ type, family=binomial(link='logit'), data=dta_m_russian)
+summary(fit)
+```
+We see that `type` is significant and type == 1 (direct data) gives larger value of Russian than type == 0 (indirect data). This is in agreement with the result in the paper and the coefficient is close to the value 0.4 reported in the paper (the sign is opposite as we are denoting systematic bias as "indirect data minus direct data")
+
+### Visualizations
+
+```{r, warning=FALSE}
+russian %>% 
+  group_by(year_of_birth, type) %>%
+  summarise_all(funs(mean)) %>%
+  ggplot(aes(x=year_of_birth, y=русский, color=as.factor(type))) + 
+  geom_point() + geom_smooth(method='loess', span=0.5) + ggtitle("After matching")-> fig_russian
+dta_m_russian %>% 
+  group_by(year_of_birth, type) %>%
+  summarise_all(funs(mean)) %>%
+  ggplot(aes(x=year_of_birth, y=русский, color=as.factor(type))) + 
+  geom_point() + geom_smooth(method='loess', span=0.5) + ggtitle("Initial data")-> fig_m_russian
+
+fig_russian / fig_m_russian
+```
+
+## Conclusions
+The results of analysis based on propensity score matching is in agreement with results that is based on comparing predictions between two machine learning models.
