@@ -172,7 +172,7 @@ residence_info = pd.read_csv("data/residence_info.csv")
 
 def read_data(filename):
     return (pd.read_csv(filename)
-            .merge(residence_info[['residence', 'elevation']], on='residence', how='left')
+    #        .merge(residence_info[['residence', 'elevation']], on='residence', how='left')
             .sort_values(['year_of_birth', 'type', 'sex'])
             .reset_index(drop=True))
 
