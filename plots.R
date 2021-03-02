@@ -3,12 +3,13 @@ library(ggplot2)
 library(dplyr)
 library(sjPlot)
 library(grid)
-library(rstudioapi)
+library(ggpubr)
+# library(rstudioapi)
 
 v1 <- 1922:1980
 
-current_path <- getActiveDocumentContext()$path 
-setwd(dirname(current_path))
+# current_path <- getActiveDocumentContext()$path 
+# setwd(dirname(current_path))
 data <- read.csv('data/all.csv')
 data[data$type == 1,]$type = 'Direct'
 data[data$type == 0,]$type = 'Indirect'
@@ -38,7 +39,7 @@ ggsave('plots/fig1.pdf', width = 10, height = 2, dpi=320)
 # Fig. 2 ------------------------------------------------------------
 
 russian_group <- read.csv('data/scatter_русский.csv')
-russian_pred <- read.csv('data/line_русский.csv')
+russian_pred <- read.csv('data/line_русский.csv')
 russian_group$collected.datab <- 0
 russian_group[russian_group$collected.data == 'direct',]$collected.datab <- 'Direct'
 russian_group[russian_group$collected.data == 'indirect',]$collected.datab <- 'Indirect'
