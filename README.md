@@ -10,7 +10,18 @@ Authors:
 The article was prepared within the framework of the HSE University Basic Research Program
 and funded by the Russian Academic Excellence Project ’5-100’.
 
-## Description
+## Main supplement
+
+[Here](https://lingconlab.github.io/Can-recall-data-be-trusted/) you can find the main supplement to the paper. It contains the following parts:
+
+- Additional visualisations of the dataset
+- Details of model tuning and selection process
+- Alternative analysis of our data using propensity score matching
+
+## Reproduction
+
+You can also find all the code that is needed to reproduce results of the paper.
+
 The initial data are stored in folder [data](https://github.com/LingConLab/Can-recall-data-be-trusted/tree/master/data). It is processed as follows:
     
 - [preprocessing.py](https://github.com/LingConLab/Can-recall-data-be-trusted/blob/master/preprocessing.py) performs different changes on the data downloaded using the parser. It returns two datasets used in the further analysis.
@@ -39,4 +50,3 @@ All the packages needed to reproduce our work are presented in
 packages (`pip install -r requirements.txt`). To avoid conflict we recommend using
 [virtualenv](https://virtualenv.pypa.io/en/latest/) or other Python environment managers.
 
-The online supplement with aditional plots could be found [here](https://lingconlab.github.io/Can-recall-data-be-trusted/).
