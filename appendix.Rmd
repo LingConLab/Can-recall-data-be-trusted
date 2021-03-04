@@ -1,6 +1,6 @@
 ---
 title: "Online supplement for the paper 'Can recall data be trusted?'"
-author: "Michael Daniel, Alexey Koshevoy, Ilya Shurov, and Nina Dobrushina"
+author: "Michael Daniel, Alexey Koshevoy, Ilya Schurov, and Nina Dobrushina"
 date: "`r Sys.Date()`"
 output:
   prettydoc::html_pretty:
@@ -18,14 +18,15 @@ library(grid)
 library(rstudioapi) 
 library(shiny)
 library(ggrepel)
+library(tidyverse)
+library(kableExtra)
 # current_path <- getActiveDocumentContext()$path 
 # setwd(dirname(current_path))
 ```
-
+## Data visualizations
 ### Average ITM in different villages
 
-
-```{r, echo=FALSE}
+```{r, echo=FALSE, message=FALSE}
 data <- read.csv('data/all.csv')
 data[data$type == 1,]$type <-  'Direct'
 data[data$type == 0,]$type <-  'Indirect'
@@ -65,7 +66,7 @@ Average ITM is shown for two age groups, people born before (exclusive) and afte
 
 ### Percentage of direct data and the total number of observations across villages
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, message=FALSE}
 data_t <- read.csv('data/all.csv')
 new <- dplyr::select(data_t, residence, type, village.population)
 new <- group_by(new, residence, village.population)
@@ -83,4 +84,132 @@ ggplot(new_type, aes(x=count, y=mean))+
 ```
 
 
-Dots are villages. Axis Y indicates the amount of the direct data obtained for the village as a percentage to all data points obtained for this village. Axis X indicates the total number of datapoints obtained for the village. The dotted lines show the average values. As \autoref{fig:village-obs-direct} shows, the amount of data per village is usually between 50 and 150, and the percentage of direct data usually lies between 20 and 40. Next, \autoref{fig:amount} is the density plot showing the distribution of direct and indirect data over the years of birth. 
+Dots are villages. Axis Y indicates the amount of the direct data obtained for the village as a percentage to all data points obtained for this village. Axis X indicates the total number of datapoints obtained for the village. The dotted lines show the average values. As \autoref{fig:village-obs-direct} shows, the amount of data per village is usually between 50 and 150, and the percentage of direct data usually lies between 20 and 40. Next, \autoref{fig:amount} is the density plot showing the distribution of direct and indirect data over the years of birth.
+
+## Model tuning and selection
+Here we provide a summary of our model selection process. See full details and code in file **tuning-final.ipynb**.
+
+### Selection process
+We treat prediction of Russian as two-class classification problem and prediction of ITM as a regression problem.
+
+For Russian, we consider gradient boosting models (`GradientBoostringClassifier` from *scikit-learn* library and `CatBoostClassifier` from *catboost* project), random forest (`RandomForestClassifier` from *scikit-learn*) and logistic regression (`LogisticRegression` from *scikit-learn*).
+
+For ITM, we also consider gradient boosting (`GradientBoostringRegressor` and `CatBoostRegressor`) and random forest (`RandomForestRegressor`) as well as linear regression (`LinearRegression`). 
+
+We avoid regularization in linear and logistic regression as we want unbaised estimations of the target variable.
+
+Categorical variables (`sex`, `mother toungue` and `residence`) are processed with *one hot* encoding scheme for all models except *catboost* (these models has their own ways to deal with categorical variables).
+
+First, we split dataset into two parts: with direct and indirect data. We perform optimization on each part separately.
+
+As usual, each part of the dataset is splitted into train and test sample (70%/30%). Hyperparameter selection is performed using grid search with 10-fold cross validation on the train set. Then the best model is evaluated on the test set.
+
+The optimization objective negative log-loss (a.k.a. negative cross-entropy or log-likelihood) for Russian and $R^2$ for ITM because they provide unbaised estimate for the corresponding mean.
+
+### Model comparison
+
+Here we provide scores of the best model of each class.
+
+#### ITM ($R^2$)
+
+```{r, echo=FALSE, message=FALSE}
+itm_res <- read_csv("itm_res_piv.csv")
+colnames(itm_res) <- c('Estimator', 'Indirect', 'Direct')
+itm_res %>% kbl() %>% kable_material("hover", full_width = FALSE) 
+```
+#### Russian (log-likelihood)
+```{r, echo=FALSE, message=FALSE}
+rus_res <- read_csv("rus_res_piv.csv")
+colnames(rus_res) <- c('Estimator', 'Indirect', 'Direct')
+rus_res %>% kbl() %>% kable_material("hover", full_width = FALSE) 
+```
+#### Model selection and scores of best models
+As we can see from the tables above, gradient boosting models (*scikit-learn*'s `GradientBoosting*` and `CatBoost*`) outperform the other models in both settings, though advantage over `RandomForest` is rather small (but seem to be consistent according to our experiments). When choosing between `CatBoost*` and `GradientBoosting*` models, we prefer the latter ones because they are faster.
+
+Below we provide scores of best models. For Russian prediction, we report accuracy and F-measure as goodness-of-fit measures.
+
+```{r, echo=FALSE, message=FALSE}
+scores <- (read.csv("scores.csv", skip = 1) %>% 
+             slice(2:n()))
+colnames(scores) <- c('type', '$R^2$', 'Accuracy', 'F-measure')
+scores$type <-  ifelse(scores$type == 0, "Indirect", "Direct")
+scores %>% 
+  mutate_if(is.numeric, format, digits=5,nsmall = 0) %>% 
+  kbl(align="c") %>% 
+  add_header_above(c(" " = 1, "ITM" = 1, "Russian" = 2)) %>%
+  kable_material("hover", full_width = FALSE) 
+```
+
+## Propensity score matching
+### Introduction
+Here we present a summary of alternative analysis of our data, using technique, known as propensity score matching (Rosenbaum and Rubin 1983). See full details and the code in file **propensity-score-matching.Rmd**.
+
+To compare target variables (i.e. `ITM` and `Russian`) between direct and indirect data, we have to take into account that chances to obtain observation in direct or indirect data depend on the values of other variables of this observation (most notably, on `year_of_birth`). These variables can also affect the target variables (i.e. ITM decreases with time) and thus produce bias in our estimates (effect known as *confounding*). To adjust for this bias, in the main paper we compare predictions of machine learning models instead of comparing values of target variables directly. This is similar to adjustment procedure used in econometrics, where potential confounders are added into the regression models to "isolate" causal effect of the variable we are interested in (in our case, data type).
+
+Propensity score matching is another approach to deal with this problem. It is a two-step procedure. At the first step, we construct a predictive model that estimates probability for an observation to be included in the indirect subsample, based on the values of other variables. At the second step, we *match* every item in the direct data with some element in the indirect data in such a way that both items, according to values of other variables and our model, has the same probability to be included in the indirect data. This allows us to produce balanced dataset and then compare variables of interest directly.
+
+We will use `MatchIt` library (Ho, Imai, King and Stuart 2011) to make the actual matching. Due to non-linear nature of our data, we use random forest algorithm to estimate the probability at the first step instead of the logistic regression (which is the default).
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(MatchIt)
+
+ITM <- read.csv("data/ITM.csv")
+russian <- read.csv("data/russian.csv")
+
+# type == 1 means direct data, type == 0 otherwise
+set.seed(1)
+mod_match_ITM <- matchit(type ~ year_of_birth 
+                         + language.population 
+                         + elevation 
+                         + village.population
+                         + mother.tongue
+                         + residence
+                         + sex,
+                         method = "nearest",
+                         distance = "randomforest",
+                         data=ITM,
+                         discard='both'
+                         )
+dta_m_ITM <- match.data(mod_match_ITM)
+```
+
+### ITM
+
+After the matching, we can compare the difference in ITM values between direct and indirect data. In fact, this difference is not equivalent to the systematic bias discussed in the paper. What we obtain here is so-called ATT, *average treatment effect on the treated*, i.e. it measures average difference in ITM between direct and indirect data for informants who are "treated", i.e. belong to indirect data subsample. This produce slightly different weighting compared with the method used in paper, where all possible combinations of values of variables were used with equal weights to estimate the difference.
+
+Nevertheless, ATT is also a reasonable estimate of the difference between direct and indirect data, and should produce similar results. To test for statistical significance, we will use `t.test`.
+
+```{r}
+t.test(number.of.lang ~ type, data = dta_m_ITM)
+```
+We see that the difference in ITM between direct and indirect data is statistically insignificant and the difference between groups lies inside of confidence interval (-0.05, 0.04). This is in agreement with the results of our paper.
+
+### Russian
+
+```{r, echo=FALSE, message=FALSE}
+mod_match_russian <- matchit(type ~ year_of_birth 
+                         + language.population 
+                         + elevation 
+                         + village.population
+                         + mother.tongue
+                         + residence
+                         + sex,
+              method = "nearest", 
+              distance = "randomforest",
+              data = russian)
+dta_m_russian <- match.data(mod_match_russian)
+```
+
+To estimate the difference in Russian, we will use bivariate logistic regression on matched dataset.
+```{r}
+fit <- glm(
+  русский ~ type,
+  family=binomial(link='logit'), 
+  data=dta_m_russian)
+summary(fit)
+```
+We see that `type` is significant and switching from indirect data (type equals 0) to direct data (type equals 1) increases chances of knowledge of Russian. This is in agreement with the result in the paper and the coefficient lies inside the confidence interval (0.21, 0.88) reported in the paper (the sign is opposite to the reported in the paper as we are denoting systematic bias as "indirect data minus direct data").
+
+### Conclusion
+
+The results of analysis based on propensity score matching is in agreement with results that is based on comparing predictions between two machine learning models. This demonstrates robustness of our methods.
