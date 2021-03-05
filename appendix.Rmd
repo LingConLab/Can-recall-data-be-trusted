@@ -6,6 +6,7 @@ output:
   prettydoc::html_pretty:
     theme: cayman
     highlight: github
+bibliography: biblio.bib
 ---
 
 ```{r setup, include=FALSE}
@@ -15,7 +16,7 @@ library(rstudioapi)
 library(dplyr)
 library(sjPlot)
 library(grid)
-library(rstudioapi) 
+library(randomForest)
 library(shiny)
 library(ggrepel)
 library(tidyverse)
@@ -61,7 +62,7 @@ ggplot(new_c, aes(x=mean, y=count))+
 ```
 
 
-Average ITM is shown for two age groups, people born before (exclusive) and after (inclusive) 1922, in (a) and (b), respectively. Comparing specific locations before and after 1922\footnote{Year 1922 is the first year for which we have two datapoints obtained directly, from the people born in this year. It is chosen as a cutoff point with a view to further analysis (see section The model)}, as well as the total average (the horizontal dotted red line), shows a decrease in the average ITM values. This reflects the loss of traditional multilingualism in the course of the last century, as it was being ousted by the use of Russian as lingua franca \citep{dobrushina2019gendered}. In the more traditional configuration, on the left panel, one can see that an ‘average Daghestanian villager’ was likely to know at least one language as L2 (not to count Russian). Hinuq, the village speaking Hinuq, a one-village language of the Tsezic branch, shows one of the highest values of ITM in both charts. Average number of L2 for a resident of Hinuq is 3.5 for people in the first group, and about 2.7 in the second age group. On the other end of the scale, villages of Darvag (Azerbaijani), Dorgeli (Kumyk) and Durangi (Avar) show no traditional multilingualism at all. 
+Average ITM is shown for two age groups, people born before (exclusive) and after (inclusive) 1922, in (a) and (b), respectively. Comparing specific locations before and after 1922^[Year 1922 is the first year for which we have two datapoints obtained directly, from the people born in this year. It is chosen as a cutoff point with a view to further analysis (see section The model in the paper)], as well as the total average (the horizontal dotted red line), shows a decrease in the average ITM values. This reflects the loss of traditional multilingualism in the course of the last century, as it was being ousted by the use of Russian as lingua franca [@dobrushina2019gendered]. In the more traditional configuration, on the left panel, one can see that an ‘average Daghestanian villager’ was likely to know at least one language as L2 (not to count Russian). Hinuq, the village speaking Hinuq, a one-village language of the Tsezic branch, shows one of the highest values of ITM in both charts. Average number of L2 for a resident of Hinuq is 3.5 for people in the first group, and about 2.7 in the second age group. On the other end of the scale, villages of Darvag (Azerbaijani), Dorgeli (Kumyk) and Durangi (Avar) show no traditional multilingualism at all. 
 
 
 ### Percentage of direct data and the total number of observations across villages
@@ -84,7 +85,7 @@ ggplot(new_type, aes(x=count, y=mean))+
 ```
 
 
-Dots are villages. Axis Y indicates the amount of the direct data obtained for the village as a percentage to all data points obtained for this village. Axis X indicates the total number of datapoints obtained for the village. The dotted lines show the average values. As \autoref{fig:village-obs-direct} shows, the amount of data per village is usually between 50 and 150, and the percentage of direct data usually lies between 20 and 40. Next, \autoref{fig:amount} is the density plot showing the distribution of direct and indirect data over the years of birth.
+Dots are villages. Axis Y indicates the amount of the direct data obtained for the village as a percentage to all data points obtained for this village. Axis X indicates the total number of datapoints obtained for the village. The dotted lines show the average values. As the figure above shows, the amount of data per village is usually between 50 and 150, and the percentage of direct data usually lies between 20 and 40. 
 
 ## Model tuning and selection
 Here we provide a summary of our model selection process. See full details and code in file **tuning-final.ipynb**.
@@ -115,13 +116,17 @@ Here we provide scores of the best model of each class.
 ```{r, echo=FALSE, message=FALSE}
 itm_res <- read_csv("itm_res_piv.csv")
 colnames(itm_res) <- c('Estimator', 'Indirect', 'Direct')
-itm_res %>% kbl() %>% kable_material("hover", full_width = FALSE) 
+itm_res %>% 
+  kable() %>% 
+  kable_styling("hover", full_width = FALSE) 
 ```
 #### Russian (log-likelihood)
 ```{r, echo=FALSE, message=FALSE}
 rus_res <- read_csv("rus_res_piv.csv")
 colnames(rus_res) <- c('Estimator', 'Indirect', 'Direct')
-rus_res %>% kbl() %>% kable_material("hover", full_width = FALSE) 
+rus_res %>%
+  kable() %>% 
+  kable_styling("hover", full_width = FALSE) 
 ```
 #### Model selection and scores of best models
 As we can see from the tables above, gradient boosting models (*scikit-learn*'s `GradientBoosting*` and `CatBoost*`) outperform the other models in both settings, though advantage over `RandomForest` is rather small (but seem to be consistent according to our experiments). When choosing between `CatBoost*` and `GradientBoosting*` models, we prefer the latter ones because they are faster.
@@ -135,9 +140,9 @@ colnames(scores) <- c('type', '$R^2$', 'Accuracy', 'F-measure')
 scores$type <-  ifelse(scores$type == 0, "Indirect", "Direct")
 scores %>% 
   mutate_if(is.numeric, format, digits=5,nsmall = 0) %>% 
-  kbl(align="c") %>% 
+  kable(align="c") %>% 
   add_header_above(c(" " = 1, "ITM" = 1, "Russian" = 2)) %>%
-  kable_material("hover", full_width = FALSE) 
+  kable_styling("hover", full_width = FALSE) 
 ```
 
 ## Propensity score matching
@@ -213,3 +218,5 @@ We see that `type` is significant and switching from indirect data (type equals 
 ### Conclusion
 
 The results of analysis based on propensity score matching is in agreement with results that is based on comparing predictions between two machine learning models. This demonstrates robustness of our methods.
+
+### References 
