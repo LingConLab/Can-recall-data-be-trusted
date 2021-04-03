@@ -21,9 +21,44 @@ library(shiny)
 library(ggrepel)
 library(tidyverse)
 library(kableExtra)
+library(nomnoml)
 # current_path <- getActiveDocumentContext()$path 
 # setwd(dirname(current_path))
 ```
+
+## Pipeline 
+
+```{r, echo=FALSE, message=FALSE}
+nomnoml::nomnoml("[Inital dataset|
+  [Type]->[Direct]
+  [Type]->[Indirect]]
+[Inital dataset|
+  [Type]->[Direct]
+  [Type]->[Indirect]] -> [Indirect data]
+[Inital dataset|
+  [Type]->[Direct]
+  [Type]->[Indirect]] -> [Direct data]
+[Direct data]->[Train on direct]
+[Indirect data]->[Train on indirect]
+
+
+[All possible 
+combinations|year of birth; sex; village]->[Trained on direct]
+[All possible 
+combinations|year of birth; sex; village]->[Trained on indirect]
+[Trained on direct]-> prediction[subtract]
+[Trained on indirect]-> [subtract]
+[subtract]->[imputed true difference]
+
+
+[All possible 
+combinations|year of birth; sex; village]-> shuffle data type[data]
+[data]->[diff]
+[diff]->[imputed true difference]
+[imputed true difference]->[Get distribution]")
+```
+
+
 ## Data visualizations
 ### Average ITM in different villages
 
