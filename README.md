@@ -7,12 +7,11 @@ Authors:
 - Ilya Schurov
 - Nina Dobrushina
 
-The article was prepared within the framework of the HSE University Basic Research Program
-and funded by the Russian Academic Excellence Project ’5-100’.
+The article was prepared within the framework of the HSE University Basic Research Program.
 
 ## Main supplement
 
-[Here](https://lingconlab.github.io/Can-recall-data-be-trusted/index.html) you can find the main supplement to the paper. It contains the following parts:
+[Here](https://lingconlab.github.io/Can-recall-data-be-trusted/) you can find the main supplement to the paper. It contains the following parts:
 
 - Additional visualisations of the dataset
 - Details of model tuning and selection process
