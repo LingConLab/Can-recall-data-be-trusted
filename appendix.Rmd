@@ -183,7 +183,7 @@ scores %>%
 These alternative approaches were suggested by the anonymous referees.
 
 ### Linear and logistic regressions with random effects
-Here we try classical approach that uses (generalized) linear regression models. We fit the model to the whole dataset (direct and indirect data combined), but include variable `type` (data type) as one of the predictors. The coefficient of this predictor measures the difference between the expected value of target variable all other variables being equal. To take into account possible village-specific effects, we use `lme4` library (Bates, Maechler, Bolker, Walker 2015) and include `village` as random effect to our models.
+Here we try classical approach that uses (generalized) linear regression models. We fit the model to the whole dataset (direct and indirect data combined), but include variable `type` (data type) as one of the predictors. The coefficient of this predictor measures the difference between the expected value of target variable all other variables being equal. To take into account possible village-specific effects, we use `lme4` library [@lme4_2015] and include `village` as random effect to our models.
 
 ```{r, echo=FALSE, message=FALSE}
 library(lme4)
@@ -195,7 +195,8 @@ russian <- read.csv("data/russian.csv")
 For ITM target variable we use multivariate linear regression with village-specific random intercept.
 
 ```{r}
-fit <- lmer(number.of.lang ~ year_of_birth + type + sex + (1|residence), data=ITM)
+fit <- lmer(number.of.lang ~ year_of_birth 
+            + type + sex + (1|residence), data=ITM)
 summary(fit)
 ```
 
@@ -205,11 +206,16 @@ The reported estimate for `type` coefficient is `r summary(fit)$coeff['type', 'E
 For Russian target variable (that is binary) we use multivariate logistic regression with village-specific random intercept.
 
 ```{r}
-fit <- glmer(русский ~ year_of_birth_adj + type + sex + (1|residence),
+fit <- glmer(русский ~ year_of_birth_adj 
+                    + type 
+                    + sex 
+                    + (1|residence),
                     family=binomial(), 
                     data=russian %>% 
-                      mutate(year_of_birth_adj = year_of_birth - 1940),
-                    # adjust origin, otherwise model does not converge
+                      mutate(year_of_birth_adj =
+                               year_of_birth - 1940),
+                    # adjust origin, otherwise model 
+                    # does not converge
                     control=glmerControl(optimizer="bobyqa",
                                          optCtrl=list(maxfun=100000)))
 summary(fit)
@@ -220,13 +226,13 @@ This result differs from the result of our paper, but does not contradict it: ab
 
 ### Propensity score matching
 #### Introduction
-Here we present a summary of alternative analysis of our data, using technique, known as propensity score matching (Rosenbaum and Rubin 1983). See full details and the code in file **propensity-score-matching.Rmd**.
+Here we present a summary of alternative analysis of our data, using technique, known as propensity score matching [@rosenbaumrubin1983]. See full details and the code in file **propensity-score-matching.Rmd**.
 
 To compare target variables (i.e. `ITM` and `Russian`) between direct and indirect data, we have to take into account that chances to obtain observation in direct or indirect data depend on the values of other variables of this observation (most notably, on `year_of_birth`). These variables can also affect the target variables (i.e. ITM decreases with time) and thus produce bias in our estimates (effect known as *confounding*). To adjust for this bias, in the main paper we compare predictions of machine learning models instead of comparing values of target variables directly. This is similar to adjustment procedure used in econometrics, where potential confounders are added into the regression models to "isolate" causal effect of the variable we are interested in (in our case, data type).
 
 Propensity score matching is another approach to deal with this problem. It is a two-step procedure. At the first step, we construct a predictive model that estimates probability for an observation to be included in the indirect subsample, based on the values of other variables. At the second step, we *match* every item in the direct data with some element in the indirect data in such a way that both items, according to values of other variables and our model, has the same probability to be included in the indirect data. This allows us to produce balanced dataset and then compare variables of interest directly.
 
-We will use `MatchIt` library (Ho, Imai, King and Stuart 2011) to make the actual matching. Due to non-linear nature of our data, we use random forest algorithm to estimate the probability at the first step instead of the logistic regression (which is the default).
+We will use `MatchIt` library [@matchit2011] to make the actual matching. Due to non-linear nature of our data, we use random forest algorithm to estimate the probability at the first step instead of the logistic regression (which is the default).
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 library(MatchIt)
