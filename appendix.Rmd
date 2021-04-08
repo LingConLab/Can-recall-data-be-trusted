@@ -160,7 +160,7 @@ You can find PDF version of diagram [here](https://github.com/LingConLab/Can-rec
 These alternative approaches were suggested by the anonymous referees.
 
 ### Linear and logistic regressions with random effects
-Here we try classical approach that uses (generalized) linear regression models. We fit the model to the whole dataset (direct and indirect data combined), but include variable `type` (evidence type) as one of the predictors. The coefficient of this predictor measures the difference between the expected value of target variable in direct and indirect data, all other variables being equal. To take into account possible village-specific effects, we use `lme4` library [@lme4_2015] and include `village` as random effect (random intercept) to our models.
+Here we try classical approach that uses (generalized) linear regression models. We fit the model to the whole dataset (direct and indirect data combined), but include variable `type` (evidence type) as one of the predictors. The coefficient of this predictor measures the difference between the expected value of target variable in direct and indirect data, all other variables being equal. To take into account possible residence-specific effects, we use `lme4` library [@lme4_2015] and include `residence` as random effect (random intercept) to our models.
 
 ```{r, echo=FALSE, message=FALSE}
 library(lme4)
