@@ -21,43 +21,9 @@ library(shiny)
 library(ggrepel)
 library(tidyverse)
 library(kableExtra)
-library(nomnoml)
 # current_path <- getActiveDocumentContext()$path 
 # setwd(dirname(current_path))
 ```
-
-## Pipeline 
-
-```{r, echo=FALSE, message=FALSE}
-nomnoml::nomnoml("[Inital dataset|
-  [Type]->[Direct]
-  [Type]->[Indirect]]
-[Inital dataset|
-  [Type]->[Direct]
-  [Type]->[Indirect]] -> [Indirect data]
-[Inital dataset|
-  [Type]->[Direct]
-  [Type]->[Indirect]] -> [Direct data]
-[Direct data]->[Train on direct]
-[Indirect data]->[Train on indirect]
-
-
-[All possible 
-combinations|year of birth; sex; village]->[Trained on direct]
-[All possible 
-combinations|year of birth; sex; village]->[Trained on indirect]
-[Trained on direct]-> prediction[subtract]
-[Trained on indirect]-> [subtract]
-[subtract]->[imputed true difference]
-
-
-[All possible 
-combinations|year of birth; sex; village]-> shuffle data type[data]
-[data]->[diff]
-[diff]->[imputed true difference]
-[imputed true difference]->[Get distribution]")
-```
-
 
 ## Data visualizations
 ### Average ITM in different villages
@@ -179,11 +145,22 @@ scores %>%
   add_header_above(c(" " = 1, "ITM" = 1, "Russian" = 2)) %>%
   kable_styling("hover", full_width = FALSE) 
 ```
+## Processing pipeline
+This diagram visualizes our data processing pipeline that is used to find *imputed difference* and test it for significance.
+
+On the left, we show how we find *imputed difference* for arbitrary dataset.
+
+On the right, we apply this procedure to our observed data and its permuted version. Thus we obtain *observed imputed difference* and null distribution. The latter is used to test observed imputed difference for significance.
+
+You can find PDF version of diagram [here](https://github.com/LingConLab/Can-recall-data-be-trusted/raw/master/workflow-diagram.pdf).
+
+![](workflow-diagram.png)
+
 ## Alternative approaches
 These alternative approaches were suggested by the anonymous referees.
 
 ### Linear and logistic regressions with random effects
-Here we try classical approach that uses (generalized) linear regression models. We fit the model to the whole dataset (direct and indirect data combined), but include variable `type` (data type) as one of the predictors. The coefficient of this predictor measures the difference between the expected value of target variable in direct and indirect data, all other variables being equal. To take into account possible village-specific effects, we use `lme4` library [@lme4_2015] and include `village` as random effect (random intercept) to our models.
+Here we try classical approach that uses (generalized) linear regression models. We fit the model to the whole dataset (direct and indirect data combined), but include variable `type` (evidence type) as one of the predictors. The coefficient of this predictor measures the difference between the expected value of target variable in direct and indirect data, all other variables being equal. To take into account possible village-specific effects, we use `lme4` library [@lme4_2015] and include `village` as random effect (random intercept) to our models.
 
 ```{r, echo=FALSE, message=FALSE}
 library(lme4)
@@ -200,7 +177,7 @@ fit <- lmer(number.of.lang ~ year_of_birth
 summary(fit)
 ```
 
-The reported estimate for `type` coefficient is `r summary(fit)$coeff['type', 'Estimate']`, but comparing it with the corresponding Std. Error , we conclude that this effect is not statistically significant. This is in agreement with the results of our paper.
+The reported estimate for `type` coefficient is `r summary(fit)$coeff['type', 'Estimate']`, but comparing it with the corresponding Std. Error (`r summary(fit)$coeff['type', 'Std. Error']`), we conclude that this effect is not statistically significant. This is in agreement with the results of our paper.
 
 #### Russian
 For Russian target variable (that is binary) we use multivariate logistic regression with village-specific random intercept.
@@ -220,15 +197,15 @@ fit <- glmer(русский ~ year_of_birth_adj
                                          optCtrl=list(maxfun=100000)))
 summary(fit)
 ```
-The reported estimate for `type` coefficient is `r summary(fit)$coeff['type', 'Estimate']`, but comparing it with the corresponding Std. Error, we conclude that this effect is not statistically significant.
+The reported estimate for `type` coefficient is `r summary(fit)$coeff['type', 'Estimate']`, but comparing it with the corresponding Std. Error (`r summary(fit)$coeff['type', 'Std. Error']`), we conclude that this effect is not statistically significant.
 
-This result differs from the result of our paper, but does not contradict it: absence of statistically significant effect does not imply that there is no effect at all, it merely shows that a particular test cannot detect it from our data. Thus the difference of results can be explained by smaller sensitivity of the generalized linear model, compared with our approach, probably, due to violations of the assumptions of this model.
+This result differs from the result of our paper, but does not contradict it: absence of statistically significant effect does not imply that there is no effect at all, it merely shows that a particular test cannot detect it from our data. Thus the difference of results can be explained by possible smaller sensitivity of the generalized linear model, compared with our approach, probably, due to violations of the assumptions of this model.
 
 ### Propensity score matching
 #### Introduction
 Here we present a summary of alternative analysis of our data, using technique, known as propensity score matching [@rosenbaumrubin1983]. See full details and the code in file **propensity-score-matching.Rmd**.
 
-To compare target variables (i.e. `ITM` and `Russian`) between direct and indirect data, we have to take into account that chances to obtain observation in direct or indirect data depend on the values of other variables of this observation (most notably, on `year_of_birth`). These variables can also affect the target variables (i.e. ITM decreases with time) and thus produce bias in our estimates (effect known as *confounding*). To adjust for this bias, in the main paper we compare predictions of machine learning models instead of comparing values of target variables directly. This is similar to adjustment procedure used in econometrics, where potential confounders are added into the regression models to "isolate" causal effect of the variable we are interested in (in our case, data type).
+To compare target variables (i.e. `ITM` and `Russian`) between direct and indirect data, we have to take into account that chances to obtain observation in direct or indirect data depend on the values of other variables of this observation (most notably, on `year_of_birth`). These variables can also affect the target variables (i.e. ITM decreases with time) and thus produce bias in our estimates (effect known as *confounding*). To adjust for this bias, in the main paper we compare predictions of machine learning models instead of comparing values of target variables directly. This is similar to adjustment procedure used in econometrics, where potential confounders are added into the regression models to "isolate" causal effect of the variable we are interested in (in our case, evidence type).
 
 Propensity score matching is another approach to deal with this problem. It is a two-step procedure. At the first step, we construct a predictive model that estimates probability for an observation to be included in the indirect subsample, based on the values of other variables. At the second step, we *match* every item in the direct data with some element in the indirect data in such a way that both items, according to values of other variables and our model, has the same probability to be included in the indirect data. This allows us to produce balanced dataset and then compare variables of interest directly.
 
