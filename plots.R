@@ -4,12 +4,12 @@ library(dplyr)
 library(sjPlot)
 library(grid)
 library(ggpubr)
-# library(rstudioapi)
+library(rstudioapi)
 
 v1 <- 1922:1980
 
-# current_path <- getActiveDocumentContext()$path 
-# setwd(dirname(current_path))
+current_path <- getActiveDocumentContext()$path
+setwd(dirname(current_path))
 data <- read.csv('data/all.csv')
 data[data$type == 1,]$type = 'Direct'
 data[data$type == 0,]$type = 'Indirect'
@@ -131,4 +131,4 @@ ITM_p <- ggplot()+
   geom_hline(yintercept = 0, size=0.5, linetype='dashed', color='blue' )
 
 arr <- ggarrange(ITM_p, russian_p, ncol=2, common.legend = FALSE, align = "h")
-ggsave('plots/fig3.pdf', width = 10, height = 3, arr, dpi=320)
+ggsave('plots/fig3.pdf', width = 10, height = 2, arr, dpi=320)
